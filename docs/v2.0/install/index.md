@@ -72,6 +72,7 @@ are more beta releases. See
 [Releases](https://github.com/filesender/filesender/releases) for
 information about recent releases.
 
+	mkdir /opt/filesender/
 	cd /opt/filesender/
 	git clone https://github.com/filesender/filesender.git filesender-2.0
 		cd filesender-2.0
@@ -85,6 +86,7 @@ On RedHat/CentOS/Debian, run:
 
 	cd /opt/filesender/filesender
 	cp config/config_sample.php config/config.php
+	mkdir tmp files log
 	chmod o-rwx tmp files log config/config.php
 
 On RedHat/CentOS, run:
@@ -115,24 +117,18 @@ Other [(later or older) versions](https://simplesamlphp.org/archive) will probab
 	cd /root
 	mkdir filesender
 	cd filesender
-	wget https://simplesamlphp.org/res/downloads/simplesamlphp-1.14.16.tar.gz
+	yum -y install wget
+	wget https://github.com/simplesamlphp/simplesamlphp/releases/download/v1.15.4/simplesamlphp-1.15.4.tar.gz
 
 * **NOTE**: you will of course remember to check [the sha256 hash of the tar file](https://simplesamlphp.org/archive), right?
 
 Extract it in a suitable directory and create symlink:
 
-	mkdir /opt/filesender/
 	cd /opt/filesender
-	tar xvzf /root/filesender/simplesamlphp-1.14.16.tar.gz
-	ln -s simplesamlphp-1.14.16/ simplesaml
+	tar xvzf /root/filesender/simplesamlphp-1.15.4.tar.gz
+	ln -s simplesamlphp-1.15.4/ simplesaml
 
 * **SECURITY NOTE**: we only want *the user interface files* to be directly accessible for the world through the web server, not any of the other files. We will not extract the SimpleSAMLphp package in the `/var/www` directory (the standard Apache document root) but rather in a specific `/opt` tree. We'll point to the SimpleSAML web root with a web server alias.
-
-Copy standard configuration files to the right places:
-
-	cd /opt/filesender/simplesaml
-	cp -r config-templates/*.php config/
-	cp -r metadata-templates/*.php metadata/
 
 To tailor your [SimpleSAMLphp](http://simplesamlphp.org/) installation to match your local site's needs please check its [installation and configuration documentation](http://simplesamlphp.org/docs). When connecting to an Identity provider make sure all the required attributes are sent by the identity provider. See the section on [IdP attributes](../admin/reference/#idp_attributes) in the Reference Manual for details.
 
@@ -160,6 +156,10 @@ The contents of the file must be as follows:
 		AllowOverride None
 		Require all granted
 	</Directory>
+
+On RedHat/CentOS, run:
+
+   	systemctl --now enable httpd
 
 On Debian you must enable your configuration, run:
 
@@ -316,7 +316,9 @@ Create the filesender database with UTF8 encoding owned by the newly created fil
 
 On RedHat/CentOS, run:
 
-	yum install -y mariadb php-mysql mysql_secure_installation
+	yum install -y mariadb php-mysql mariadb-server
+	systemctl --now enable mariadb
+	mysql_secure_installation
 
 On Debian, run:
 
@@ -341,7 +343,8 @@ A sample settings file is provided with FileSender in **config-templates/filesen
 
 On **RedHat/CentOS**, run:
 
-	service httpd reload
+    cp /opt/filesender/filesender/config-templates/filesender-php.ini /etc/php.d/
+    systemctl reload httpd
 
 On **Debian**, run:
 
@@ -376,7 +379,7 @@ Reload your Apache server to activate the changes to your php.ini.
 
 On **RedHat/CentOS**, run:
 
-	service httpd reload
+	systemctl reload httpd
 
 On **Debian**, run:
 
@@ -387,7 +390,6 @@ On **Debian**, run:
 Copy the configuration template and edit it to match your site settings.
 
 	cd /opt/filesender/filesender/config
-	cp config{_sample,}.php
 	$EDITOR config.php
 
 Be sure to at least set `$config['site_url']`, contact details, database settings and authentication configuration. The configuration file is self-explanatory.
